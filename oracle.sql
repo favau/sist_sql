@@ -9,7 +9,7 @@ SELECT ename, job From emp;
  
 = 주석 
 SELECT * /* 주석 */ FROM emp; --주석
-
+ 
 - dual
 DUAL : 함수 및 계산의 결과를 볼 때 사용할 수 있는 공용(PUBLIC) 테이블
        사용자 데이터가 있는 테이블에서 유래하지 않은 상수 값 현재 날짜,
