@@ -395,3 +395,429 @@ SELECT LOWER(ename),job,TRUNC(MONTHS_BETWEEN(SYSDATE,hiredate)/12)
 FROM emp;
 
 04-10---------------------------------------------------------------------------
+/*
+case 컬럼 when 비교값 then 결과값
+         when 비교값 then 결과값
+         when 비교값 then 결과값
+         (else 결과값)
+end
+*/
+
+SELECT ename,sal,job,
+       CASE job WHEN 'SALESMAN' THEN sal*0.1
+                WHEN 'MANAGER' THEN sal*0.2
+                WHEN 'ANALYST' THEN sal*0.3
+                ELSE sal*0.4
+       END AS "BONUS" --알리아스
+FROM emp;
+
+SELECT ename,sal,job,
+       CASE WHEN sal>=4000 AND sal<=5000 THEN 'A'
+            WHEN sal>=3000 AND sal<4000 THEN 'B'
+            WHEN sal>=2000 AND sal<3000 THEN 'C'
+            WHEN sal>=1000 AND sal<2000 THEN 'D'
+            ELSE 'F'
+       END AS "Grade"
+FROM emp ORDER BY "Grade", sal DESC;;
+
+decode(ORACLE 전용) : =비교만 가능
+DECODE(컬럼,비교값,반환값,
+           비교값,반환값,
+           비교값,반환값,
+           반환값)
+           
+SELECT ename,sal,job,
+       DECODE(job,'SALESMAN',sal*0.1,
+                  'MANAGER',sal*0.2,
+                  'ANALYST',sal*0.3,
+                  sal*0.4) AS "Bonus"
+FROM emp;
+
+SELECT ename,sal,job,
+       DECODE(TRUNC(sal/1000),5,'A',
+                              4,'A',
+                              3,'B',
+                              2,'C',
+                              1,'D',
+                              'F') AS "Grade"
+FROM emp;
+
+- 그룹함수 : 행 집합 연산을 수행하여 그룹별로 하나의 결과를 산출
+AVG() : NULL을 제외한 모든 값들의 평균을 반환, NULL값은 평균 계산에서 무시됨
+SELECT AVG(sal) FROM emp;
+
+COUNT() : NULL을 제외한 값을 가진 모든 레코드의 수를 반환.
+SELECT COUNT(*) FROM emp;
+SELECT COUNT(comm) FROM emp;
+
+MAX() : 레코드 내에 있는 여러 값 중 가장 큰 값을 반환
+SELECT MAX(sal) FROM emp;
+SELECT MAX(ename) FROM emp;
+SELECT MAX(hiredate) FROM emp;
+
+MIN() : 레코드 내에 있는 여러값 중 가장 작은 값을 반환
+SELECT MIN(sal) FROM emp;
+SELECT MIN(ename) FROM emp;
+SELECT MIN(hiredate) FROM emp;
+
+SUM() : 레코드들이 포함하고 있는 모든 값을 더하여 반환
+SELECT SUM(sal) FROM emp;
+
+SELECT MAX(sal),MIN(sal),ROUND(AVG(sal)),SUM(sal) FROM emp;
+
+-GROUP BY 절 : SELECT절에 집합함수 적용 시 개별 컬럼을 지정할 수 없기 때문에 GROUP BY절을 이용해서 그룹으로 묶어서 집합함수를 적용함
+              (그룹(지정한 개별 컬럼)별 집합함수에 의해 만들어진 값을 반환)
+
+SELECT deptno, MAX(sal), MIN(sal), ROUND(AVG(sal)),SUM(sal) FROM emp GROUP BY deptno;
+
+SELECT job,MAX(sal),MIN(sal),ROUND(AVG(sal)),SUM(sal) FROM emp GROUP BY job;
+
+SELECT job,MAX(sal),MIN(sal),ROUND(AVG(sal)),SUM(sal) FROM emp WHERE job='SALESMAN' GROUP BY job;
+
+SELECT deptno, job, SUM(sal)
+FROM emp GROUP BY deptno,job ORDER BY deptno;
+
+HAVING : 그룹처리 결과를 제한하고자 할 때 HAVING절 사용
+         WHERE절에는 집합함수를 사용할 수 없고 HAVING절 사용
+
+-오류 발생
+SELECT deptno,ROUND(AVG(sal))
+FROM emp WHERE ROUND(AVG(sal))>=2000 GROUP BY deptno;
+
+-정상 구문
+SELECT deptno,ROUND(AVG(sal))
+FROM emp GROUP BY deptno HAVING ROUND(AVG(sal))>=2000;
+
+having절의 이용(having절에 알리아스 사용 x)
+SELECT deptno, MAX(sal)
+FROM emp GROUP BY deptno HAVING MAX(sal)>=3000;
+
+-분기별 입사자의 수
+SELECT TO_CHAR(hiredate,'Q') AS Quarter,COUNT(empno) AS employee_number
+FROM emp GROUP BY TO_CHAR(hiredate,'Q') ORDER BY Quarter;
+
+SELECT CEIL(EXTRACT(MONTH FROM hiredate)/3) AS Quarter,
+       COUNT(empno) AS count_member FROM emp GROUP BY CEIL(EXTRACT(MONTH FROM hiredate)/3);
+
+[실습문제]     
+10)사원이름, 월급, 월급과 커미션을 더한 값을 컬럼명 실급여라고 해서 출력하시오. 단 NULL값은 나타나지 않게 작성하시오.
+SELECT ename,sal,sal+NVL(comm,0) AS 실급여 FROM emp;
+11)월급과 커미션을 합친 금액이 2,000이상인 급여를 받는 사원의 이름,업무,월급,커미션,고용날짜를 출력하시오. 단,고용날짜는 1980-12-17형태로 출력하시오.
+SELECT ename,job,sal,comm,TO_CHAR(hiredate,'YYYY-MM-DD') AS hiredate FROM emp WHERE sal+NVL(comm,0)>=2000;
+12)CASE문과 DECODE함수를 사용하여 다음 데이터에 따라 JOB열의 값을 기준으로 모든 사원의 등급을 표시하시오.
+SELECT ename,sal,job,
+       CASE job WHEN 'PRESIDENT' THEN 'A'
+                WHEN 'ANALYST' THEN 'B'
+                WHEN 'MANAGER' THEN 'C'
+                WHEN 'SALESMAN' THEN 'D'
+                WHEN 'CLERK' THEN 'E'
+                ELSE '0'
+       END "Grade"
+FROM emp;
+
+SELECT ename,sal,job, DECODE(job,'PRESIDENT','A',
+                      'ANALYST','B',
+                      'MANAGER','C',
+                      'SALESMAN','D',
+                      'CLERK','E',
+                      '0') AS "Grade"
+FROM emp;
+
+업무        등급
+PRESIDENT   A
+ANALYST     B
+MANAGER     C
+SALESMAN    D
+CLERK       E
+기타         0
+
+[실습문제]
+1)모든 사원의 급여 최고액,최저액,총액 및 평균액을 표시하시오. 열 레이블을 각각 maximum,minimum,sum,average로 지정하고, 결과를 정수로 반올림하고 세자리 단위로 ,(쉼표)를 명시하시오.
+SELECT TO_CHAR(MAX(sal),'9,999') maximum,TO_CHAR(MIN(sal),'9,999') minimum,TO_CHAR(SUM(sal),'99,999') sum,
+TO_CHAR(ROUND(AVG(sal)),'9,999') average FROM emp;
+2)급여와 커미션을 더한 금액의 최고,최저,평균금액을 구하시오. 평균금액은 소수점 첫째자리까지 표시하시오.
+SELECT MAX(sal+NVL(comm,0)),MIN(sal+NVL(comm,0)),ROUND(AVG(sal+NVL(comm,0)),'1') FROM emp;
+3)업무와 업무가 동일한 사원 수를 표시하시오.(업무별 사원 수를 구하시오.)
+SELECT job,COUNT(*) FROM emp GROUP BY job;
+4)30번 부서의 사원수를 구하시오.
+SELECT COUNT(*) FROM emp WHERE deptno = 30;
+SELECT deptno,COUNT(*) FROM emp WHERE deptno=30 GROUP BY deptno;
+5)업무별 최고 월급을 구하고 업무, 최고 월급을 출력하시오.
+SELECT job,MAX(sal) FROM emp GROUP BY job;
+6)부서별로 지급되는 총월급에서 금액이 9,000이상을 받는 사람들의 부서번호, 총월급을 출력하시오.
+SELECT deptno,SUM(sal) FROM emp GROUP BY deptno HAVING SUM(sal)>=9000;
+7)업무별로 사원번호가 제일 늦은 사람을 구하고 그 결과 내에서 사원번호 79로 시작하는 결과만 보여주시오.(업무,제일 큰 사원번호 출력)
+SELECT job,MAX(empno) FROM emp GROUP BY job HAVING MAX(empno)>='7900' AND MAX(empno)<=7999 ;
+8)업무별 총월급을 출력하는데 업무가 'MANAGER'인 사원은 제외하고 총월급이 5,000보다 많은 업무와 총월급만 출력하시오.
+SELECT job,SUM(sal) FROM emp GROUP BY job HAVING SUM(sal)>5000 AND job!='MANAGER';
+
+- 분석함수
+RANK() : 순위를 표현할 때 사용하는 함수
+RANK(조건값) WITHIN GROUP (ORDER BY 조건값 컬럼명 |ASC|DESC|) : 특정 데이터의 순위 확인하기
+(주의) RANK 뒤에 나오는 데이터와 ORDER BY 뒤에 나오는 데이터는 같은 컬럼이어야 함.
+
+SELECT ename FROM emp ORDER BY ename;
+SELECT RANK('SMITH') WITHIN GROUP (ORDER BY ename) "RANK" FROM emp;
+
+RANK() OVER (정렬값)
+전체순위보기 : RANK() 뒤가 WITHIN GROUP가 아니고 OVER()로 바뀜
+사원들의 empno, ename, sal, 급여 순위를 출력
+SELECT empno,ename,sal,RANK() OVER (ORDER BY sal) AS RANK_ASC,RANK() OVER(ORDER BY sal DESC) AS RANK_DESC FROM emp;
+
+10번 부서에 속한 직원들의 사번과 이름, 급여, 해당 부서 내의 급여 순위를 출력
+SELECT empno,ename,sal,RANK() OVER (ORDER BY sal DESC) "RANK" FROM emp WHERE deptno=10;
+
+순위를 명시할 때 그룹을 나누어 순위를 만들 때는 PARTITION BY 사용
+사번,이름,급여,부서번호,부서별 급여 순위를 출력
+SELECT empno,ename,sal,deptno,RANK() OVER(PARTITION BY deptno) 
+
+- JOIN : 둘 이상의 테이블을 연결하여 데이터를 검색하는 방법
+
+- 카티션 곱 : 검색하고자 했던 데이터뿐 아니라 조인에 사용된 테이블들의 모든 데이터가 반환되는 현상
+SELECT * FROM emp,dept;
+
+ORACLE 전용
+- 동등 조인(Equil Join) : 조건절에 조건이 Equality Condition(=)에 의하여 조인이 이루어 짐
+SELECT emp.ename,dept.dname FROM emp,dept WHERE emp.deptno = dept.deptno;
+
+테이블에 알리아스 부여하기
+SELECT e.ename, d.dname FROM emp e, dept d
+WHERE e.deptno = d.deptno;
+
+컬럼명을 호출할 때 테이블명 또는 테이블 알리아스를 생략
+(조인에 참가하는 테이블들에 같은 컬럼이 존재하면 반드시 테이블명 또는 테이블 알리아스를 명시해야함)
+SELECT ename, dname FROM emp e, dept d
+WHERE e.deptno = d.deptno;
+
+추가적인 조건 명시하기
+SELECT e.ename,d.dname FROM emp e,dept d 
+WHERE e.deptno = d.deptno AND e.ename = 'ALLEN';
+
+SELECT e.ename,e.sal,d.dname FROM emp e, dept d
+WHERE e.deptno = d.deptno AND e.sal BETWEEN 3000 AND 4000;
+
+- 비동등 조인(Non Equil Join)
+테이블의 어떤 column도 join할 테이블의 column에 일치하지 않을 때 사용하고 
+조인 조건은 동등(=)이외의 연산자를 갖음(between and, is null,in)
+
+사원이름,급여,급여등급 구하기(emp,salgrade 테이블 이용)
+SELECT e.ename,e.sal,s.grade FROM emp e, salgrade s
+WHERE e.sal BETWEEN s.losal AND s.hisal;
+
+- SELF JOIN 같은 테이블에 공통의 칼럼이 있어야 가능함
+사원이름과 해당 사원의 관리자 이름 구하기(관리자가 없는 사원 제외)
+SELECT e.ename 사원이름, n.ename 관리자이름 FROM emp e,emp n
+WHERE e.mgr=n.empno;
+
+부 조인(Outer Join) : 조인할 때 두개의 테이블의 두 개 컬럼에서 공통된 값이 없다면
+테이블로부터 데이터를 반환하지 않음. 두 개 컬럼에서 공통되지 않은 값을 표시하고 싶다면
+Outer Join을 사용해서 표시 가능
+
+누락된 행의 반대 테이블의 조인 조건의 컬럼에 (+)기호 표시
+SELECT DISTINCT(e.deptno),d.deptno FROM emp e, dept d WHERE e.deptno(+) = d.deptno;
+
+사원이름과 해당 사원의 관리자 이름구하기(관리자가 없는 사원도 표시)
+SELECT e.ename 사원이름,n.ename 관리자이름 FROM emp e,emp n
+WHERE e.mgr = n.empno(+);
+
+[실습문제]
+1)모든 사원의 이름,부서번호,부서이름을 출력하시오.(emp,dept)
+SELECT e.ename,e.deptno,d.dname From emp e,dept d WHERE e.deptno = d.deptno;
+2)업무가 MANAGER인 사원의 정보를 이름,업무,부서명,근무지 순으로 출력하시오.(emp,dept)
+SELECT e.ename,e.job,d.dname,d.loc FROM emp e,dept d WHERE e.deptno = d.deptno AND e.job IN 'MANAGER';
+3)커미션을 받고 급여가 1,600 이상인 사원의 이름,급여,부서명,근무지를 출력하시오.(emp,dept)
+SELECT e.ename,e.sal,d.dname,d.loc FROM emp e,dept d WHERE e.deptno = d.deptno AND e.sal>=1600 AND e.comm IS NOT NULL;
+4)근무지가 CHICAGO인 모든 사원의 이름,업무,부서번호 및 부서이름을 출력하시오.(emp,dept)
+SELECT e.ename,e.job,e.deptno,d.dname FROM emp e,dept d WHERE e.deptno = d.deptno AND d.loc IN 'CHICAGO';
+5)근무지(loc)별로 근무하는 사원의 수가 5명 이하인 경우, 인원이 적은 도시 순으로 정렬하시오.(근무 인원이 0명인 곳도 표시)
+SELECT d.loc,COUNT(e.empno) emp_member FROM emp e,dept d WHERE e.deptno(+)=d.deptno GROUP BY d.loc HAVING COUNT(e.empno)<=5 ORDER BY emp_member ASC;
+
+- 표준 SQL
+- 내부 조인(Inner Join)
+SELECT emp.ename, dept.deptno FROM emp INNER JOIN dept ON emp.deptno = dept.deptno;
+
+SELECT e.ename, d.deptno FROM emp e INNER JOIN dept d ON e.deptno = d.deptno;
+
+부가적인 조건이 있으면 WHERE절 사용
+SELECT e.ename, d.deptno FROM emp e INNER JOIN dept d
+ON e.deptno = d.deptno WHERE e.ename = 'ALLEN';
+
+만약 조인 조건에 사용된 컬럼의 이름이 같다면 다음과 같이 USING절을 사용하여 조인 조건을 정의할 수 있음
+SELECT e.ename, d.dname FROM emp e INNER JOIN dept d USING(deptno);
+
+(주의)USING에 사용된 컬럼은 테이블명 또는 테이블 알리아스를 붙이지 않음
+SELECT e.ename, deptno FROM emp e INNER JOIN dept d USING(deptno); --USING절의 e.deptno와 d.deptno가 합쳐져서 구분할 필요 x
+
+- Self Join
+사원이름과 해당 사원의 관리자이름 구하기(관리자가 없는 사원은 제외)
+SELECT e.ename name, m.ename manager_name FROM emp e JOIN emp m ON e.mgr = m.empno;
+
+- Outer Join(외부 조인)
+누락된 행의 방향 표시
+사원이름과 해당 사원의 관리자이름 구하기(관리자가 없는 사원도 표시)
+SELECT e.ename name, m.ename manager_name FROM emp e LEFT OUTER JOIN emp m ON e.mgr = m.empno;
+
+[실습문제]
+6)업무가 SALESMAN인 사원의 정보를 이름,업무,부서명,근무지 순으로 출력하시오.(emp,dept)
+SELECT e.ename,e.job,d.dname,d.loc FROM emp e INNER JOIN dept d USING(deptno);
+7)근무지가 DALLAS인 모든 사원의 이름,업무,부서번호 및 부서이름을 출력하시오.
+SELECT e.ename,e.job,deptno,d.dname FROM emp e INNER JOIN dept d USING(deptno);
+8)관리자보다 먼저 입사한 모든 사원의 이름 및 입사일을 관리자의 이름 및 입사일과 함께 표시하고
+열 레이블을 각기 employee,emp hired,manager,mgr_hired로 지정하시오.(관리자가 없는 사원 미출력)
+SELECT e.ename employee,e.hiredate "emp hired", m.ename manager,m.hiredate "mgr hired" FROM emp e JOIN emp m ON e.mgr = m.empno WHERE e.hiredate<m.hiredate;
+
+04-11---------------------------------------------------------------------------
+9)10번 부서에서 근무하는 사원들의 부서번호,부서이름,사원이름,월급,급여등급을 출력하시오.
+SELECT e.deptno,d.dname,e.ename,e.sal,s.grade 
+FROM emp e,dept d,salgrade s
+WHERE e.deptno=d.deptno AND e.sal BETWEEN s.losal AND s.hisal AND e.deptno=10;
+
+SELECT d.deptno,d.dname,e.ename,e.sal,s.grade
+FROM emp e INNER JOIN dept d
+ON e.deptno=d.deptno
+INNER JOIN salgrade
+ON e.sal BETWEEN s.losal AND s.hisal
+WHERE e.deptno=10;
+
+- 집합연산자
+- UNION (합집합 중복값 제거) --합집합 중복x
+UNION은 두 테이블의 결합을 나타내며, 결합시키는 두 테이블의 중복되지 않는 값들을 반환
+SELECT deptno FROM emp
+UNION
+SELECT deptno FROM dept;
+
+- UNION ALL --합집합 중복o
+UNION과 같으나 두 테이블의 중복되는 값까지 반환
+SELECT deptno FROM emp
+UNION ALL
+SELECT deptno FROM dept;
+
+- INTERSECT --교집합
+INTERSECT는 두 행의 집합 중 공통된 행을 반환
+SELECT deptno FROM emp
+INTERSECT
+SELECT deptno FROM dept;
+
+- MINUS --차집합
+MINUS는 첫번째 SELECT문에 의해 반환되는 행 중에서 두번째 SELECT문에 의해
+반환되는 행에 존재하지 않는 행들을 보여줌
+SELECT deptno FROM dept
+MINUS
+SELECT deptno FROM emp;
+
+- SUBQUERY : 다른 하나의 SQL 문장의 절에 nested(내장)된 SELECT 문장
+- 단일행 서브쿼리 : 오직 한 개의 행(값)을 반환
+SELECT empno,ename,job FROM emp
+WHERE job = (SELECT job FROM emp WHERE empno=7369);
+
+SELECT empno,ename,sal FROM emp WHERE sal>(SELECT sal FROM emp WHERE empno=7698);
+
+- 다중 행 서브쿼리 : 하나 이상의 행을 반환하는 서브쿼리
+IN 연산자의 사용
+부서별로 가장 급여를 적게 받는 사원과 동일한 급여를 받는 사원의 정보를 출력하시오.
+SELECT empno,ename,sal FROM emp
+WHERE sal IN (SELECT MIN(sal) FROM emp GROUP BY deptno);
+
+ANY 연산자의 사용 --OR
+ANY 연산자는 서브쿼리의 결과값 중 어느 하나의 값이라도 만족이 되면 결과값을 반환
+SELECT sal FROM emp WHERE job = 'SALESMAN';
+
+SELECT ename,sal FROM emp WHERE sal>1250 OR sal>1500 OR sal>1600;
+-위 SQL문을 서브쿼리 형식으로 작성
+SELECT ename,sal FROM emp
+WHERE sal>ANY(SELECT sal FROM emp WHERE job = 'SALESMAN');
+
+- ALL 연산자의 사용 --AND
+서브쿼리의 결과와 모든 값이 일치
+
+SELECT sal FROM emp WHERE deptno=20;
+SELECT empno,ename,sal,deptno FROM emp
+WHERE sal>800 AND sal>2975 AND sal>3000;
+- 위의 SQL문을 서브쿼리로 작성
+SELECT empno,ename,sal,deptno FROM emp
+WHERE sal>ALL(SELECT sal FROM emp WHERE deptno=20);
+
+- 다중열 서브쿼리
+서브쿼리의 결과가 두 개 이상의 컬럼으로 반환되어 메인 쿼리에 전달하는 쿼리
+SELECT empno,ename,sal,deptno FROM emp
+WHERE (deptno,sal) IN(SELECT deptno,sal FROM emp WHERE deptno=30);
+
+부서별로 가장 급여를 적게 받는 사원의 정보를 출력
+SELECT empno,ename,sal,deptno FROM emp
+WHERE (deptno,sal) IN (SELECT deptno,MIN(sal) FROM emp GROUP BY deptno);
+
+SELECT deptno,sal FROM emp WHERE ename='SMITH';
+
+[실습문제]
+1)"BLAKE"와 같은 부서에 있는 사원들의 이름과 입사일을 구하는데 "BLAKE"는 제외하고 출력하시오.
+SELECT ename,hiredate FROM emp WHERE ename IN(SELECT ename FROM emp WHERE ename!='BLAKE');
+2)평균급여보다 많은 급여를 받는 사원들의 사원번호,이름,월급을 출력하는데 월급이 높은 사람 순으로 출력하시오.
+SELECT empno,ename,sal FROM emp WHERE sal>(SELECT AVG(sal) FROM emp) ORDER BY sal DESC;
+3)10번 부서에서 급여를 가장 적게 받는 사원과 동일한 급여를 받는 사원의 이름과 월급을 출력하시오.
+SELECT ename,sal FROM emp WHERE (deptno,sal) IN(SELECT deptno,MIN(sal) FROM emp WHERE deptno IN '10' GROUP BY deptno);
+4)부서별 사원수를 구하고 사원수가 3명이 넘는 부서의 부서명과 사원수를 출력하시오.
+[JOIN]
+SELECT d.dname,COUNT(e.empno) cnt FROM emp e,dept d 
+WHERE e.deptno = d.deptno GROUP BY d.dname HAVING COUNT(e.empno)>3;
+[SUBQUERY]
+SELECT d.dname,e.cnt FROM dept d,(SELECT deptno,COUNT(empno) cnt FROM emp GROUP BY deptno)e
+WHERE d.deptno = e.deptno(+) AND e.cnt>3;
+5)사원번호가 7844인 사원보다 빨리 입사한 사원의 이름과 입사일을 출력하시오.
+SELECT ename,hiredate FROM emp WHERE hiredate<(SELECT hiredate FROM emp WHERE empno IN 7844);
+6)직속 상사(mgr)이 KING인 모든 사원의 이름과 급여를 출력하시오.
+SELECT ename,sal FROM emp WHERE mgr IN(SELECT empno FROM emp WHERE ename IN 'KING');
+
+7)20번 부서에서 가장 급여를 많이 받는 사원과 동일한 급여를 받는 사원의 이름,부서명,급여,급여등급을 출력하시오.
+SELECT e.ename,d.dname,e.sal,s.grade FROM emp e 
+INNER JOIN dept d ON e.deptno = d.deptno 
+INNER JOIN salgrade s ON e.sal BETWEEN s.losal AND s.hisal 
+WHERE e.sal IN(SELECT MAX(e.sal) FROM emp e);
+
+8)총급여(sal+comm)가 평균급여보다 많은 급여를 받는 사원의 부서번호,이름,총급여,커미션을 출력하시오.
+(커미션은 유(O),무(X)로 표시하고 컬럼명은 "comm유무"로 출력)
+SELECT deptno,ename,sal+NVL(comm,0) 총급여, 
+       CASE WHEN comm IS NOT NULL THEN 'O' 
+            ELSE 'X'
+       END "comm유무"
+       --NVL2(comm,'O','X') "comm유무"
+FROM emp
+WHERE sal+NVL(comm,0)>(SELECT ROUND(AVG(sal)) FROM emp);
+
+9)CHICAGO 지역에서 근무하는 사원의 평균 급여보다 높은 급여를 받는 사원의 이름과 급여, 지역명을 출력하시오.
+SELECT e.ename,e.sal,d.loc FROM emp e INNER JOIN dept d ON e.deptno = d.deptno WHERE e.sal>(SELECT ROUND(AVG(e.sal)) FROM emp e,dept d WHERE d.loc IN 'CHICAGO');
+10)커미션이 없는 사원들 중 월급이 가장 높은 사원의 급여등급을 출력하시오.
+SELECT s.GRADE FROM salgrade s INNER JOIN emp e ON e.sal BETWEEN s.losal AND s.hisal WHERE e.sal IN(SELECT MAX(e.sal) FROM emp e WHERE e.comm IS NULL);
+11)ALLEN보다 급여를 많이 받는 사람 중에서 입사일이 가장 빠른 사원과 동일한 날짜에 입사한 사원의 이름과 입사일,급여를 출력하시오.
+SELECT ename,hiredate,sal FROM emp 
+WHERE hiredate IN(SELECT MIN(hiredate) FROM emp WHERE (sal >ALL(SELECT sal FROM emp WHERE ename IN 'ALLEN')));
+
+- INSERT문
+테이블에 행을 삽입
+
+전체 데이터 삽입(전체 컬럼 명시)
+INSERT INTO emp (emp,ename,job,mgr,hiredate,sal,comm,deptno)
+VALUES (8000,'DENNIS','SALESMAN',7698,'99/01/22',1700,200,30);
+
+
+
+/*
+DEPT
+-deptno 부서번호
+-dname 부서명
+-loc 근무지
+
+EMP
+-empno 사원번호
+-ename 이름
+-job 직업
+-mgr 
+-hiredate 근무시작일
+-sal 월급
+-comm 커미션
+-deptno 부서번호
+
+SALGRADE
+-grade 등급
+-losal 최소월급
+-hisal 최대월급
+*/
