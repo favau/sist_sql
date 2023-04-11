@@ -798,8 +798,109 @@ WHERE hiredate IN(SELECT MIN(hiredate) FROM emp WHERE (sal >ALL(SELECT sal FROM 
 INSERT INTO emp (emp,ename,job,mgr,hiredate,sal,comm,deptno)
 VALUES (8000,'DENNIS','SALESMAN',7698,'99/01/22',1700,200,30);
 
+전체 데이터를 삽입할 때는 컬럼명 생략 가능
+INSERT INTO emp
+VALUES (8001,'MARIA','CLERK',7839,'99/02/02',1500,NULL,20);
+
+값이 입력되지 않는 컬럼은 제외
+INSERT INTO emp (empno,ename,job,mgr,hiredate,sal,deptno)
+VALUES (8002,'PETER','CLERK',7698,'99/03/01',1000,30);
+
+- UPDATE 문
+행 단위로 데이터를 갱신
+
+UPDATE emp SET mgr=7900 WHERE empno=8000;
+UPDATE emp SET ename='JOHN',sal=1800,comm=500 WHERE empno=8000;
+
+- DELETE 문
+행을 삭제함
+DELETE FROM emp WHERE empno=8000;
+
+- 데이터베이스 트랜잭션
+트랜잭션은 데이터 처리의 한 단위
+오라클 서버에서 발생하는 SQL문들을 하나의 논리적인 작업단위로써 
+실패하는 일련의 SQL문을 트랜잭션이라고 할 수 있음
+
+1)트랜잭션의 시작
+실행 가능한 SQL문장이 제일 처음 실행될 때
+
+2)트랜잭션의 종료
+COMMIT이나 ROLLBACK
+DDL 이나 DLC 문장의 실행(자동 COMMIT)
+기계 장애 또는 시스템 충돌
+사용자가 정상 종료
+
+3)자동 COMMIT은 다음의 경우 발생
+DDL,DCL 문장이 완료될 때 
+명시적인 COMMIT이나 ROLLBACK 없이 SQL*PLUS를 정상 종료했을 경우
+
+4)자동 ROLLBACK은 다음의 경우 발생
+SQL*PLUS를 비정상 종료했을 경우
+
+-commit(변경사항 저장) & rollback(변경사항 취소)의 장점
+데이터의 일관성을 제공
+데이터를 영구적으로 변경하기 전에 데이터 변경을 확인하게 함
+관련된 작업을 논리적으로 그룹화 함
+
+- 테이블
+테이블은 기본적인 데이터 저장 단위, 레코드와 컬럼으로 구성
+레코드(RECORD,ROW) : 테이블의 데이터는 행에 저장
+컬럼(COLUMN) : 테이블의 각 컬럼은 데이터를 구별할 수 있는 속성을 표현
+
+오라클 데이터베이스의 테이블
+- 사용자 테이블
+- 데이터 딕셔너리
+
+데이터 딕셔너리
+1)사용자가 소유한 테이블의 이름
+SELECT table_name FROM user_tables;
+2)사용자가 소유한 개별 객체 유형
+SELECT DISTINCT object_type FROM user_objects;
+3)사용자가 소유한 테이블,뷰,동의어 및 시퀸스
+SELECT * FROM user_catalog;
+
+- 테이블 생성
+테이블 이름 : 만들어진 테이블의 이름
+열 이름 : 테이블 내에 만들어질 열의 이름
+데이터 타입 : 각각의 열은 자신의 데이터 타입을 가짐
+default <표현식> : 각각의 열에는 insert 구문에 열의 값이 지정되지 않은 경우에 이용될 디폴트 값을 지정
+제약조건 : 만들어질 각 열에 선택적으로 제약조건을 정의할 수 있다.
+
+CREATE TABLE employee(
+  empno number(6),
+  name varchar2(30) not null,
+  salary number(8,2),
+  hire_date date default sysdate,
+  constraint employee_pk primary key(empno)
+);
 
 
+
+1)'BOSTON'에서 근무하는 사원의 이름,직업,사원번호,급여를 출력하시오.
+SELECT ename,job,empno,sal FROM emp, dept WHERE loc IN 'BOSTON';
+2)'10'번 부서에서 급여를 가장 많이 받는 사원의 이름,사원번호,직업,근무시작일,등급을 출력하시오.
+SELECT e.ename,e.empno,e.job,e.hiredate,s.grade FROM emp e INNER JOIN salgrade s ON e.sal BETWEEN s.losal AND s.hisal 
+WHERE e.sal IN(SELECT MAX(e.sal) FROM emp e WHERE e.deptno IN '10');
+3)평균 급여보다 높은 급여를 받는 사원들 중 가장 높은 급여를 받는 사원과 가장 적은 급여를 받는 사원의 이름,부서명,근무지를 출력하시오.
+SELECT e.ename,d.dname,d.loc FROM emp e INNER JOIN dept d ON e.deptno=d.deptno
+WHERE e.sal IN (SELECT MAX(e.sal) FROM emp e 
+WHERE e.sal>(SELECT AVG(e.sal) FROM emp e)) 
+OR e.sal IN (SELECT MIN(e.sal) FROM emp e 
+WHERE e.sal>(SELECT AVG(e.sal) FROM emp e));
+4)'2000'보다 낮은 급여를 받는 사원들 중 사원번호가 '7800'보다 큰 사원의 이름,최소월급,등급을 출력하시오.
+SELECT e.ename,s.loshal,s.grade FROM emp e INNER JOIN salgrade s ON e.sal BETWEEN s.losal AND s.hisal WHERE (SELECT e.empno FROM emp e WHERE e.empno>'7800')
+5)이름이 'KING'인 사원보다 먼저 입사한 사원들 중에서 커미션이 '500' 이상이고 부서번호가 '30'인 사원들의 이름,직업을 출력하시오.
+6)'MANAGER'직업인 사원의 평균 급여보다 높은 사원의 이름과 근무시작일을 오래된 순서부터 출력하시오.
+7)직업별 사원수와 평균 급여를 출력하시오.
+8)부서번호가 '30'인 사원의 커미션 유무(O,X로 출력)와 커미션,근무지,직업을 출력하시오.
+9)평균 급여가 가장 높은 부서의 이름,직업,부서번호,근무시작일을 출력하시오.
+10)'81-12-01' 이전에 입사한 사원들 중 커미션이 없고 급여가 '2500' 이상인 사원의 이름,직업,부서명,등급을 출력하시오.
+
+
+
+
+
+--pinos71@daum.net
 /*
 DEPT
 -deptno 부서번호
@@ -810,7 +911,7 @@ EMP
 -empno 사원번호
 -ename 이름
 -job 직업
--mgr 
+-mgr 상사번호
 -hiredate 근무시작일
 -sal 월급
 -comm 커미션
